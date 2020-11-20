@@ -1,0 +1,141 @@
+<style>
+.face {
+    position: fixed;
+    width: 16px; height: 16px;
+    z-index: 2;
+}
+#vision {
+    position: fixed;
+    width: 128px; height: 128px;
+    border-radius: 64px;
+    background: #fff;
+    z-index: 1;
+}
+body {
+    background: #000;
+}
+</style>
+
+<div id="vision" style="display:none"></div>
+
+<script>
+var API = {
+    create: function(key) {
+        return new Promise(function(resolve, reject){
+            var xhr = new XMLHttpRequest();
+            xhr.onload = function() {
+                resolve(JSON.parse(xhr.responseText));
+            };
+            xhr.open("POST", "/create?key=" + key);
+            xhr.send();
+        });
+    },
+    move: function(key, x, y) {
+        return new Promise(function(resolve, reject){
+            var xhr = new XMLHttpRequest();
+            xhr.onload = function() {
+                resolve(JSON.parse(xhr.responseText));
+            };
+            xhr.open("POST", "/move?key=" + key + "&x=" + x + "&y=" + y);
+            xhr.send();
+        });
+    },
+    objects: function(key) {
+        return new Promise(function(resolve, reject){
+            var xhr = new XMLHttpRequest();
+            xhr.onload = function() {
+                resolve(JSON.parse(xhr.responseText));
+            };
+            xhr.open("GET", "/objects?key=" + key);
+            xhr.send();
+        });
+    }
+};
+
+let me = null;
+
+API.create(location.hash.slice(1)).then(function(data) {
+    me = {id:data.id, key:data.key};
+    location.hash = data.key;
+});
+
+let faceColors = ["#4caf50", "#f44336", "#2196f3", "#ffb300"];
+const visionElem = document.getElementById("vision");
+
+function domUpdateFace(id, data) {
+    let elem = document.getElementById("object-" + id);
+    if (elem == null) {
+        elem = document.createElement("div");
+        elem.classList.add("face");
+        elem.classList.add("object")
+        elem.id="object-" + id;
+        document.body.appendChild(elem);
+    }
+    elem.style.display = "block";
+    elem.style.top = data.position[1] - 8 + "px";
+    elem.style.left = data.position[0] - 8 + "px";
+    elem.style.backgroundColor = faceColors[data.color];
+}
+
+function domObjects() {
+    let objects = document.getElementsByClassName("object");
+    let ids = [];
+    for (let object of Array.from(objects)) {
+        ids.push(object.id.slice("object-".length));
+    }
+    return ids;
+}
+
+function domDeleteObject(id) {
+    let elem = document.getElementById("object-" + id);
+    elem.style.display = "none";
+}
+
+setInterval(function() {
+    API.objects(me.key).then(function(data) {
+        for (let id of domObjects()) {
+            if (!(id in data)) {
+                domDeleteObject(id);
+            }
+        }
+
+        for (let id in data) {
+            let object = data[id];
+            if (object.type == "face") {
+                domUpdateFace(id, object);
+            }
+
+
+            if (id == me.id) {
+                visionElem.style.left = object.position[0] - 64 + "px";
+                visionElem.style.top = object.position[1] - 64 + "px";
+                visionElem.style.display = "block";
+
+                if (!me.position)
+                    me.position = object.position;
+            }
+        }
+    });
+}, 50);
+
+document.onkeydown = function(e) {
+    console.log(e.key);
+    switch(e.key) {
+        case "ArrowLeft":
+            me.position[0] -= 5;
+            break;
+        case "ArrowRight":
+            me.position[0] += 5;
+            break;
+        case "ArrowUp":
+            me.position[1] -= 5;
+            break;
+        case "ArrowDown":
+            me.position[1] += 5;
+            break;
+    }
+    if (e.key.startsWith("Arrow")) {
+        API.move(me.key, me.position[0], me.position[1]);
+    }
+}
+</script>
