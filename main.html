@@ -4,19 +4,7 @@
     width: 16px; height: 16px;
     z-index: 2;
 }
-#vision {
-    position: fixed;
-    width: 128px; height: 128px;
-    border-radius: 64px;
-    background: #fff;
-    z-index: 1;
-}
-body {
-    background: #000;
-}
 </style>
-
-<div id="vision" style="display:none"></div>
 
 <script>
 var API = {
@@ -60,7 +48,6 @@ API.create(location.hash.slice(1)).then(function(data) {
 });
 
 let faceColors = ["#4caf50", "#f44336", "#2196f3", "#ffb300"];
-const visionElem = document.getElementById("vision");
 
 function domUpdateFace(id, data) {
     let elem = document.getElementById("object-" + id);
@@ -107,10 +94,6 @@ setInterval(function() {
 
 
             if (id == me.id) {
-                visionElem.style.left = object.position[0] - 64 + "px";
-                visionElem.style.top = object.position[1] - 64 + "px";
-                visionElem.style.display = "block";
-
                 if (!me.position)
                     me.position = object.position;
             }

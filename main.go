@@ -23,14 +23,26 @@ type Face struct {
 	Color uint8
 }
 
+type Screen struct {
+	Owner ID
+	Content interface{}
+}
+
+type YouTube struct {
+	VideoID string		// Video ID
+	TimeStart time.Time // Time in which the YouTube video was at 0:00
+}
+
 type State struct {
 	Faces map[ID]*Face
+	Screens map[ID]*Screem
 	Keys map[string]ID
 }
 
 func NewState() *State {
 	s := &State{}
 	s.Faces = make(map[ID]*Face)
+	s.Screens = make(map[ID]*Screen)
 	s.Keys = make(map[string]ID)
 	return s
 }
@@ -52,18 +64,12 @@ func main() {
 			return
 		}
 
-		selfPosition := state.Faces[selfId].Position
-
 		data := make(map[ID]interface{})
 		for id, face := range state.Faces {
-			diffX := face.Position[0] - selfPosition[0]
-			diffY := face.Position[1] - selfPosition[1]
-			if diffX*diffX + diffY*diffY < 64*64 {
-				data[id] = map[string]interface{}{
-					"type": "face",
-					"position": face.Position,
-					"color": face.Color,
-				}
+			data[id] = map[string]interface{}{
+				"type": "face",
+				"position": face.Position,
+				"color": face.Color,
 			}
 		}
 		c.JSON(200, data)
