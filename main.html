@@ -1,79 +1,123 @@
 <style>
-body { font-family: sans-serif; }
-.screen {
+#sidebar {
     position: fixed;
-    width: 508px;
-    height: 268px;
+    height: 100%;
+    top: 0; left: 0;
+    width: 256px;
+    background: hsl(25, 30%, 20%);
+    padding-top: 8px;
+}
+#sidebar h2 {
+    color: #fff;
+    text-align: center;
+    font-size: 20px;
+    font-weight: bold;
+    margin: 8px 0;
+}
+#people .person {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    padding: 8px 16px; }
+#people .person.me {
+    cursor: pointer; }
+#people .person.me:hover {
+    background: hsl(25, 30%, 30%); }
+#people .person .face {
+    background: #aaa;
+    display: inline-block;
+    position: relative; }
+#people .person .name {
+    margin-left: 8px;
+    color: #fff; }
+
+#map {
+    width: 578px;
+    height: 578px;
+    background: #fff;
+    position: fixed;
+    border-radius: 4px;
+    top: 50%; left: 50%;
+    margin-top: -289px;
+    margin-left: -161px; /* -289 + 128 */
+}
+body { font-family: monospace;  background: hsl(25, 30%, 70%); }
+.screen {
+    border-radius: 4px;
+    position: absolute;
+    width: 380px; /* 384 - 4*/
+    height: 196px; /* 216 - 16 - 4*/
     background: #000;
     border: 8px solid #000;
     border-width: 8px 0;
     z-index: 1;
 }
 .screen .youtube {
-    width: 508px;
-    height: 268px;
+    width: 380px;
+    height: 196px;
     border: 0;
 }
 .screen .cover {
-    width: 508px;
-    height: 268px;
+    width: 380px;
+    height: 196px;
     background: transparent;
     position: absolute;
-    top: 0;    left: 0;
+    top: 8px; left: 0;
     z-index: 2; }
 .screen .button {
     display: none;
-    width: 32px;
-    height: 32px;
-    border-radius: 16px;
+    width: 28px;
+    height: 28px;
     position: absolute;
     cursor: pointer;
-
+    border-radius: 4px;
     z-index: 3;
 
     border: 0;
     color: #fff;
     padding: 0; }
 .screen .button::after {
-    width: 32px;
+    width: 28px;
     display: inline-block;
     text-align: center;
-    line-height: 32px; }
+    line-height: 28px; }
 .screen:hover .button {
     display: block; }
 
 .screen .button-youtube {
+    font-size: 10px;
     top: 16px;
     left: 72px;
-    background: #f44336; }
+    background: hsl(0,60%,40%); }
 .screen .button-youtube:active {
     background: #d32f2f; }
 .screen .button-youtube::after {
     content: "YT"; }
-.screen .button-close { background: #777;
+.screen .button-close {
+    background: hsl(0,0%,40%);
     left: 24px;
     top: 16px; }
 
 .screen .button-close::after {
     content: "×"; }
 .screen .button-delete {
-    background: #777;
+    background: hsl(0,0%,40%);
     top: 16px; right: 24px; }
 .screen .button-delete::after { content: "🗑"; }
 
 .face {
-    position: fixed;
-    width: 28px; height: 28px;
+    border-radius: 4px;
+    position: absolute;
+    width: 20px; height: 20px;
     z-index: 4;
 }
 .face::after, .face::before {
     position: absolute;
     display: inline-block;
-    width: 8px;
-    height: 8px;
-    left: 16px;
-    top: 6px;
-    border-radius: 4px;
+    width: 4px;
+    height: 4px;
+    right: 4px;
+    top: 4px;
     background: #111;
     content: " ";
 }
@@ -82,18 +126,24 @@ body { font-family: sans-serif; }
 }
 .face .smile {
     background: #111;
-    border-radius: 4px;
     position: absolute;
     display: inline-block;
-    width: 12px;
-    height: 4px;
-    left: 8px;
-    top: 18px;
+    width: 10px;
+    height: 3px;
+    left: 5px;
+    top: 12px;
 }
-.me {
+.face.me {
     z-index: 5;
 }
 </style>
+
+<div id="sidebar">
+    <h2>People</h2>
+    <div id="people">
+    </div>
+</div>
+<div id="map"></div>
 
 <script>
 function youtubeURLtoID(url) {
@@ -177,6 +227,16 @@ var API = {
             xhr.send();
         });
     },
+    face_rename: function(key, name) {
+        return new Promise(function(resolve, reject){
+            var xhr = new XMLHttpRequest();
+            xhr.onload = function() {
+                resolve(JSON.parse(xhr.responseText));
+            };
+            xhr.open("POST", "/face/rename?key=" + key + "&name=" + name);
+            xhr.send();
+        });
+    }
 };
 
 let me = null;
@@ -186,7 +246,47 @@ API.create(location.hash.slice(1)).then(function(data) {
     location.hash = data.key;
 });
 
-let faceColors = ["#4caf50", "#f44336", "#2196f3", "#ffb300", "#9c27b0", "#795548"];
+let faceColors = ["hsl(0,60%,40%)", "hsl(100,60%,40%)", "hsl(240,60%,40%)", "hsl(300,60%,40%)", "hsl(50,60%,40%)", "hsl(180,60%,40%)"];
+
+const mapElem = document.getElementById("map");
+
+function domUpdatePerson(id, data) {
+    let personElem = document.getElementById("person-" + id);
+    if (!personElem) {
+        personElem = document.createElement("div");
+        personElem.classList.add("person");
+        personElem.id = "person-" + id;
+        document.getElementById("people").appendChild(personElem);
+
+        let face = document.createElement("div");
+        face.classList.add("face");
+        face.style.backgroundColor = faceColors[data.color];
+        let smile = document.createElement("div");
+        smile.className = "smile";
+        face.appendChild(smile);
+        personElem.appendChild(face);
+
+        let nameElem = document.createElement("span");
+        nameElem.classList.add("name");
+        personElem.appendChild(nameElem);
+
+        if (id == me.id) {
+            personElem.classList.add("me");
+            personElem.addEventListener("click",  function() {
+                let name = window.prompt("Rename to:");
+                if (name !== null) {
+                    API.face_rename(me.key, name);
+                }
+            });
+        }
+    }
+
+    let nameElem = personElem.querySelector(".name");
+    if (data.name)
+        nameElem.innerHTML = data.name;
+    else
+        nameElem.innerHTML = "Anonymous";
+}
 
 function domUpdateFace(id, data, me) {
     let elem = document.getElementById("object-" + id);
@@ -203,11 +303,11 @@ function domUpdateFace(id, data, me) {
         smile.classList.add("smile");
         elem.appendChild(smile);
 
-        document.body.appendChild(elem);
+        mapElem.appendChild(elem);
     }
     elem.style.display = "block";
-    elem.style.top = data.position[1] * 32 + 2 + "px";
-    elem.style.left = data.position[0] * 32 + 2 + "px";
+    elem.style.top = data.position[1] * 24 + 2 + "px";
+    elem.style.left = data.position[0] * 24 + 2 + "px";
     elem.style.backgroundColor = faceColors[data.color];
 }
 
@@ -258,11 +358,11 @@ function domUpdateScreen(id, data) {
             elem.appendChild(closeElem);
         }
 
-        document.body.appendChild(elem);
+        mapElem.appendChild(elem);
     }
     elem.style.display = "block";
-    elem.style.top = data.position[1] * 32 + 2 + "px";
-    elem.style.left = data.position[0] * 32 + 2 + "px";
+    elem.style.top = data.position[1] * 24 + 2 + "px";
+    elem.style.left = data.position[0] * 24 + 2 + "px";
 
     let ytElem = elem.getElementsByClassName("youtube")[0];
     if (data.content && data.content.youtube) {
@@ -300,7 +400,7 @@ function domDeleteObject(id) {
     elem.style.display = "none";
 }
 
-setInterval(function() {
+function update() {
     API.objects(me.key).then(function(data) {
         for (let id of domObjects()) {
             if (!(id in data)) {
@@ -312,6 +412,7 @@ setInterval(function() {
             let object = data[id];
             if (object.type == "face") {
                 domUpdateFace(id, object, id == me.id);
+                domUpdatePerson(id, object);
             } else if (object.type == "screen") {
                 domUpdateScreen(id, object);
             }
@@ -322,7 +423,9 @@ setInterval(function() {
             }
         }
     });
-}, 120);
+}
+
+setInterval(update, 120);
 
 document.onkeydown = function(e) {
     console.log(e.key);
@@ -340,8 +443,10 @@ document.onkeydown = function(e) {
             me.position[1] += 1;
             break;
     }
+    if (me.position[0] >= 24) me.position[0] = 23;
+    if (me.position[1] >= 24) me.position[1] = 23;
     if (e.key.startsWith("Arrow")) {
-        API.move(me.key, me.position[0], me.position[1]);
+        API.move(me.key, me.position[0], me.position[1]).then(update);
     }
 }
 </script>

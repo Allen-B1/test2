@@ -22,6 +22,7 @@ type Coord [2]int32
 type Face struct {
 	Position Coord
 	Color uint8
+	Name string
 }
 
 const NUM_COLORS = 6
@@ -44,6 +45,9 @@ type State struct {
 	Keys map[string]ID
 	Lock sync.RWMutex
 }
+
+const MAP_WIDTH = 24
+const MAP_HEIGHT = 24
 
 func NewState() *State {
 	s := &State{}
@@ -79,6 +83,7 @@ func main() {
 				"type": "face",
 				"position": face.Position,
 				"color": face.Color,
+				"name": face.Name,
 			}
 		}
 
@@ -137,6 +142,22 @@ func main() {
 		})
 	})
 
+	r.POST("/face/rename", func (c *gin.Context) {
+		state.Lock.Lock()
+		defer state.Lock.Unlock()
+
+		id := state.Keys[c.Query("key")]
+		if _, ok := state.Faces[id]; !ok {
+			c.JSON(400, map[string]string{"error": "invalid id"})
+			return
+		}
+
+		face := state.Faces[id]
+		face.Name = c.Query("name")
+
+		c.JSON(200, nil)
+	})
+
 	r.POST("/screen/create", func (c *gin.Context) {
 		state.Lock.Lock()
 		defer state.Lock.Unlock()
@@ -151,6 +172,7 @@ func main() {
 		screen := new(Screen)
 		screen.Owner = id
 		screen.Position = state.Faces[id].Position
+		screen.Position[0] += 1
 		state.Screens[screenID] = screen
 		c.JSON(200, screenID)
 	})
@@ -252,6 +274,10 @@ func main() {
 			return
 		}
 
+		if x >= MAP_WIDTH || y >= MAP_HEIGHT  {
+			c.JSON(400, map[string]string{"error": "out of bounds"})
+			return
+		}
 		state.Faces[id].Position = Coord{int32(x),int32(y)}
 
 		c.JSON(200, nil)
