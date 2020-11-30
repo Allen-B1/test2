@@ -19,6 +19,12 @@ func NewID() (ID, string) {
 
 type Coord [2]int32
 
+func (c1 Coord) Diff(c2 Coord) int32 {
+	dx := c1[0]-c2[0]
+	dy := c1[1]-c2[1]
+	return dx*dx+dy*dy
+}
+
 type Face struct {
 	Position Coord
 	Color uint8
@@ -156,6 +162,29 @@ func main() {
 		face.Name = c.Query("name")
 
 		c.JSON(200, nil)
+	})
+
+	r.POST("/face/kill", func (c *gin.Context) {
+		state.Lock.Lock()
+		defer state.Lock.Unlock()
+
+		id := state.Keys[c.Query("key")]
+		if _, ok := state.Faces[id]; !ok {
+			c.JSON(400, map[string]string{"error": "invalid id"})
+			return
+		}
+
+		face := state.Faces[id]
+
+		killed := []ID{}
+		for targetID, target := range state.Faces {
+			if target.Position.Diff(face.Position) == 1 {
+				delete(state.Faces, targetID)
+				killed = append(killed, targetID)
+			}
+		}
+
+		c.JSON(200, killed)
 	})
 
 	r.POST("/screen/create", func (c *gin.Context) {
