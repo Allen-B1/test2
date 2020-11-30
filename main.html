@@ -1,12 +1,111 @@
 <style>
+body { font-family: sans-serif; }
+.screen {
+    position: fixed;
+    width: 508px;
+    height: 268px;
+    background: #000;
+    border: 8px solid #000;
+    border-width: 8px 0;
+    z-index: 1;
+}
+.screen .youtube {
+    width: 508px;
+    height: 268px;
+    border: 0;
+}
+.screen .cover {
+    width: 508px;
+    height: 268px;
+    background: transparent;
+    position: absolute;
+    top: 0;    left: 0;
+    z-index: 2; }
+.screen .button {
+    display: none;
+    width: 32px;
+    height: 32px;
+    border-radius: 16px;
+    position: absolute;
+    cursor: pointer;
+
+    z-index: 3;
+
+    border: 0;
+    color: #fff;
+    padding: 0; }
+.screen .button::after {
+    width: 32px;
+    display: inline-block;
+    text-align: center;
+    line-height: 32px; }
+.screen:hover .button {
+    display: block; }
+
+.screen .button-youtube {
+    top: 16px;
+    left: 72px;
+    background: #f44336; }
+.screen .button-youtube:active {
+    background: #d32f2f; }
+.screen .button-youtube::after {
+    content: "YT"; }
+.screen .button-close { background: #777;
+    left: 24px;
+    top: 16px; }
+
+.screen .button-close::after {
+    content: "×"; }
+.screen .button-delete {
+    background: #777;
+    top: 16px; right: 24px; }
+.screen .button-delete::after { content: "🗑"; }
+
 .face {
     position: fixed;
-    width: 16px; height: 16px;
-    z-index: 2;
+    width: 28px; height: 28px;
+    z-index: 4;
+}
+.face::after, .face::before {
+    position: absolute;
+    display: inline-block;
+    width: 8px;
+    height: 8px;
+    left: 16px;
+    top: 6px;
+    border-radius: 4px;
+    background: #111;
+    content: " ";
+}
+.face::before {
+    left: 4px;
+}
+.face .smile {
+    background: #111;
+    border-radius: 4px;
+    position: absolute;
+    display: inline-block;
+    width: 12px;
+    height: 4px;
+    left: 8px;
+    top: 18px;
+}
+.me {
+    z-index: 5;
 }
 </style>
 
 <script>
+function youtubeURLtoID(url) {
+    url = new URL(url);
+    if (url.host == "youtu.be"){ 
+        return url.pathname.slice(1);
+    } else if (url.host == "youtube.com" || url.host == "www.youtube.com") {
+        return url.searchParams.get("v");
+    }
+    return "";
+}
+
 var API = {
     create: function(key) {
         return new Promise(function(resolve, reject){
@@ -37,7 +136,47 @@ var API = {
             xhr.open("GET", "/objects?key=" + key);
             xhr.send();
         });
-    }
+    },
+    screen_create: function(key) {
+        return new Promise(function(resolve, reject){
+            var xhr = new XMLHttpRequest();
+            xhr.onload = function() {
+                resolve(JSON.parse(xhr.responseText));
+            };
+            xhr.open("POST", "/screen/create?key=" + key);
+            xhr.send();
+        });
+    },
+    screen_close: function(key, screen) {
+        return new Promise(function(resolve, reject){
+            var xhr = new XMLHttpRequest();
+            xhr.onload = function() {
+                resolve(JSON.parse(xhr.responseText));
+            };
+            xhr.open("POST", "/screen/close?key=" + key + "&screen=" + screen);
+            xhr.send();
+        });
+    },
+    screen_delete: function(key, screen) {
+        return new Promise(function(resolve, reject){
+            var xhr = new XMLHttpRequest();
+            xhr.onload = function() {
+                resolve(JSON.parse(xhr.responseText));
+            };
+            xhr.open("POST", "/screen/delete?key=" + key + "&screen=" + screen);
+            xhr.send();
+        });
+    },
+    screen_youtube: function(key, screen, video) {
+        return new Promise(function(resolve, reject){
+            var xhr = new XMLHttpRequest();
+            xhr.onload = function() {
+                resolve(JSON.parse(xhr.responseText));
+            };
+            xhr.open("POST", "/screen/youtube?key=" + key + "&screen=" + screen + "&video=" + video);
+            xhr.send();
+        });
+    },
 };
 
 let me = null;
@@ -47,21 +186,104 @@ API.create(location.hash.slice(1)).then(function(data) {
     location.hash = data.key;
 });
 
-let faceColors = ["#4caf50", "#f44336", "#2196f3", "#ffb300"];
+let faceColors = ["#4caf50", "#f44336", "#2196f3", "#ffb300", "#9c27b0", "#795548"];
 
-function domUpdateFace(id, data) {
+function domUpdateFace(id, data, me) {
     let elem = document.getElementById("object-" + id);
     if (elem == null) {
         elem = document.createElement("div");
         elem.classList.add("face");
-        elem.classList.add("object")
-        elem.id="object-" + id;
+        elem.classList.add("object");
+        if (me) {
+            elem.classList.add("me");
+        }
+        elem.id = "object-" + id;
+
+        let smile = document.createElement("div");
+        smile.classList.add("smile");
+        elem.appendChild(smile);
+
         document.body.appendChild(elem);
     }
     elem.style.display = "block";
-    elem.style.top = data.position[1] - 8 + "px";
-    elem.style.left = data.position[0] - 8 + "px";
+    elem.style.top = data.position[1] * 32 + 2 + "px";
+    elem.style.left = data.position[0] * 32 + 2 + "px";
     elem.style.backgroundColor = faceColors[data.color];
+}
+
+function domUpdateScreen(id, data) {
+    let elem = document.getElementById("object-" + id);
+    if (elem == null) {
+        elem = document.createElement("div");
+        elem.classList.add("object");
+        elem.classList.add("screen");
+        elem.id = "object-" + id;
+
+        let coverElem = document.createElement("div");
+        coverElem.classList.add("cover");
+        elem.appendChild(coverElem);
+
+        if (data.owner == me.id) {
+            let screenId = id;
+
+            let closeElem = document.createElement("button");
+            closeElem.classList.add("button");
+            closeElem.classList.add("button-close");
+            closeElem.onclick = function() {
+                API.screen_close(me.key, screenId);    
+            }
+            
+            let deleteElem = document.createElement("button");
+            deleteElem.classList.add("button");
+            deleteElem.classList.add("button-delete");
+            deleteElem.onclick = function() {
+                API.screen_delete(me.key, screenId);    
+            }
+
+            let youtubeElem = document.createElement("button");
+            youtubeElem.classList.add("button");
+            youtubeElem.classList.add("button-youtube");
+            youtubeElem.onclick = function() {
+                let videoUrl = window.prompt("Video URL");
+                let videoId = youtubeURLtoID(videoUrl);
+                if (videoId) {
+                    API.screen_youtube(me.key, screenId, videoId);
+                }
+            };
+
+
+
+            elem.appendChild(youtubeElem);
+            elem.appendChild(deleteElem);
+            elem.appendChild(closeElem);
+        }
+
+        document.body.appendChild(elem);
+    }
+    elem.style.display = "block";
+    elem.style.top = data.position[1] * 32 + 2 + "px";
+    elem.style.left = data.position[0] * 32 + 2 + "px";
+
+    let ytElem = elem.getElementsByClassName("youtube")[0];
+    if (data.content && data.content.youtube) {
+        if (!ytElem) {
+            ytElem = document.createElement("iframe");
+            ytElem.classList.add("youtube");
+            ytElem.style.display = "block";
+            elem.appendChild(ytElem);
+        }
+
+        let secondsPassed = (Date.now() - new Date(data.content.time_start).getTime()) / 1000;
+        ytElem.style.display = "block";
+        if (ytElem.src.indexOf(data.content.video) == -1) {
+            ytElem.src = "https://www.youtube.com/embed/" + data.content.video + "?rel=0&autoplay=1&disablekb=1&controls=0&start=" + Math.round(secondsPassed);
+        }
+    } else {
+        if (ytElem) {
+            ytElem.style.display = "none";
+            ytElem.src = "about:blank";
+        }
+    }
 }
 
 function domObjects() {
@@ -89,9 +311,10 @@ setInterval(function() {
         for (let id in data) {
             let object = data[id];
             if (object.type == "face") {
-                domUpdateFace(id, object);
+                domUpdateFace(id, object, id == me.id);
+            } else if (object.type == "screen") {
+                domUpdateScreen(id, object);
             }
-
 
             if (id == me.id) {
                 if (!me.position)
@@ -99,22 +322,22 @@ setInterval(function() {
             }
         }
     });
-}, 50);
+}, 120);
 
 document.onkeydown = function(e) {
     console.log(e.key);
     switch(e.key) {
         case "ArrowLeft":
-            me.position[0] -= 5;
+            me.position[0] -= 1;
             break;
         case "ArrowRight":
-            me.position[0] += 5;
+            me.position[0] += 1;
             break;
         case "ArrowUp":
-            me.position[1] -= 5;
+            me.position[1] -= 1;
             break;
         case "ArrowDown":
-            me.position[1] += 5;
+            me.position[1] += 1;
             break;
     }
     if (e.key.startsWith("Arrow")) {

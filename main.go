@@ -5,6 +5,7 @@ import (
 	"math/rand"
 	"strconv"
 	"time"
+	"sync"
 )
 
 type ID string
@@ -23,20 +24,25 @@ type Face struct {
 	Color uint8
 }
 
+const NUM_COLORS = 6
+
 type Screen struct {
+	Position Coord
 	Owner ID
 	Content interface{}
 }
 
 type YouTube struct {
-	VideoID string		// Video ID
-	TimeStart time.Time // Time in which the YouTube video was at 0:00
+	YouTube struct{} `json:"youtube"`
+	VideoID string	`json:"video"`	// Video ID
+	TimeStart time.Time `json:"time_start"`// Time in which the YouTube video was at 0:00
 }
 
 type State struct {
 	Faces map[ID]*Face
-	Screens map[ID]*Screem
+	Screens map[ID]*Screen
 	Keys map[string]ID
+	Lock sync.RWMutex
 }
 
 func NewState() *State {
@@ -57,6 +63,9 @@ func main() {
 		c.File("main.html")
 	})
 	r.GET("/objects", func(c *gin.Context) {
+		state.Lock.RLock()
+		defer state.Lock.RUnlock()
+
 		key := c.Query("key")
 		selfId := state.Keys[key]
 		if selfId == "" {
@@ -72,9 +81,21 @@ func main() {
 				"color": face.Color,
 			}
 		}
+
+		for id, screen := range state.Screens {
+			data[id] = map[string]interface{}{
+				"type": "screen",
+				"position": screen.Position,
+				"content": screen.Content,
+				"owner": screen.Owner,
+			}
+		}
 		c.JSON(200, data)
 	})
 	r.POST("/create", func (c *gin.Context) {
+		state.Lock.Lock()
+		defer state.Lock.Unlock()
+
 		if c.Query("key") != "" {
 			id, ok := state.Keys[c.Query("key")]
 			if ok {
@@ -88,9 +109,26 @@ func main() {
 
 		id, key := NewID()
 
+		color := uint8(rand.Intn(NUM_COLORS))
+		if len(state.Faces) < NUM_COLORS {
+			colorsUsed := make(map[uint8]bool)
+			for _, face := range state.Faces {
+				colorsUsed[face.Color] = true
+			}
+
+			colorsLeft := []uint8{}
+			for i := uint8(0); i < NUM_COLORS; i++ {
+				if !colorsUsed[i] {
+					colorsLeft = append(colorsLeft, i)
+				}
+			}
+
+			color = colorsLeft[rand.Intn(len(colorsLeft))]
+		}
+
 		state.Faces[id] = &Face{
-			Position: Coord{int32(rand.Intn(512)),int32(rand.Intn(512))},
-			Color: uint8(rand.Intn(4)),
+			Position: Coord{int32(rand.Intn(8)),int32(rand.Intn(8))},
+			Color: color,
 		}
 		state.Keys[key] = id
 		c.JSON(200, map[string]interface{}{
@@ -99,7 +137,110 @@ func main() {
 		})
 	})
 
+	r.POST("/screen/create", func (c *gin.Context) {
+		state.Lock.Lock()
+		defer state.Lock.Unlock()
+
+		id := state.Keys[c.Query("key")]
+		if _, ok := state.Faces[id]; !ok {
+			c.JSON(400, map[string]string{"error": "invalid id"})
+			return
+		}
+
+		screenID, _ := NewID()
+		screen := new(Screen)
+		screen.Owner = id
+		screen.Position = state.Faces[id].Position
+		state.Screens[screenID] = screen
+		c.JSON(200, screenID)
+	})
+
+	r.POST("/screen/delete", func (c *gin.Context) {
+		state.Lock.Lock()
+		defer state.Lock.Unlock()
+
+		id := state.Keys[c.Query("key")]
+		if _, ok := state.Faces[id]; !ok {
+			c.JSON(400, map[string]string{"error": "invalid id"})
+			return
+		}
+
+		screenID := ID(c.Query("screen"))
+		screen, ok := state.Screens[screenID]
+		if !ok {
+			c.JSON(400, map[string]string{"error": "invalid screen id"})
+			return
+		}
+		if id != screen.Owner {
+			c.JSON(400, map[string]string{"error": "not owner of screen"})
+			return
+		}
+	
+		delete(state.Screens, screenID)
+
+		c.JSON(200, nil)
+	})
+
+	r.POST("/screen/close", func (c *gin.Context) {
+		state.Lock.Lock()
+		defer state.Lock.Unlock()
+
+		id := state.Keys[c.Query("key")]
+		if _, ok := state.Faces[id]; !ok {
+			c.JSON(400, map[string]string{"error": "invalid id"})
+			return
+		}
+
+		screenID := ID(c.Query("screen"))
+		screen, ok := state.Screens[screenID]
+		if !ok {
+			c.JSON(400, map[string]string{"error": "invalid screen id"})
+			return
+		}
+		if id != screen.Owner {
+			c.JSON(400, map[string]string{"error": "not owner of screen"})
+			return
+		}
+	
+		screen.Content = nil
+
+		c.JSON(200, nil)
+	})
+
+	r.POST("/screen/youtube", func (c *gin.Context) {
+		state.Lock.Lock()
+		defer state.Lock.Unlock()
+
+		id := state.Keys[c.Query("key")]
+		if _, ok := state.Faces[id]; !ok {
+			c.JSON(400, map[string]string{"error": "invalid id"})
+			return
+		}
+
+		screenID := ID(c.Query("screen"))
+		screen, ok := state.Screens[screenID]
+		if !ok {
+			c.JSON(400, map[string]string{"error": "invalid screen id"})
+			return
+		}
+		if id != screen.Owner {
+			c.JSON(400, map[string]string{"error": "not owner of screen"})
+			return
+		}
+		
+		videoID := c.Query("video")
+		screen.Content = YouTube{
+			VideoID: videoID,
+			TimeStart: time.Now(),
+		}
+
+		c.JSON(200, nil)
+	})
+
 	r.POST("/move", func (c *gin.Context) {
+		state.Lock.Lock()
+		defer state.Lock.Unlock()
+
 		key := c.Query("key")
 		x, _ := strconv.ParseUint(c.Query("x"), 10, 64)
 		y, _ := strconv.ParseUint(c.Query("y"), 10, 64)
