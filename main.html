@@ -1,21 +1,27 @@
+<script src="/static/api.js"></script>
+<script src="/static/objects/screen.js"></script>
+<script src="/static/objects/face.js"></script>
+<link rel="stylesheet" href="/static/objects/screen.css">
+<link rel="stylesheet" href="/static/objects/face.css">
+
 <style>
-#sidebar {
+.blob {
     position: fixed;
-    height: 100%;
-    top: 0; left: 0;
-    width: 256px;
-    background: hsl(25, 30%, 20%);
-    display: flex;
-    flex-direction: column;
+    background: rgba(0,0,0,0.35);
+    border-radius: 4px;
+    z-index: 10;
 }
-.spacer { flex-grow: 1; }
-#sidebar h2 {
+.blob h2 {
     color: #fff;
     text-align: center;
     font-size: 16px;
     font-weight: bold;
     margin: 8px 0;
-    margin-top: 16px;
+}
+#people {
+    top: 32px;
+    left: 32px;
+    padding-bottom: 4px;
 }
 #people .person {
     display: flex;
@@ -24,146 +30,40 @@
     padding: 8px 16px; }
 #people .person.me {
     cursor: pointer; }
-#people .person.me:hover {
-    background: hsl(25, 30%, 30%); }
+#people .person.me:hover, #objects .object-type:hover {
+    background: rgba(0,0,0,0.45);
+}
 #people .person .face {
     background: #aaa;
     display: inline-block;
-    position: relative; }
+    position: relative;
+    top:0; left:0; }
 #people .person .name {
     margin-left: 8px;
     font-size: 12px;
     color: #fff; }
 
+#objects {
+    left: 32px;
+    bottom: 32px;
+}
 #objects .object-type {
     cursor: pointer;
     color: #fff;
     font-size: 12px;
     padding: 8px 16px; }
-#objects .object-type:hover {
-    background: hsl(25, 30%, 30%); }
-
 
 #map {
-    width: 578px;
-    height: 578px;
+    width: 100%;
+    height: 100%;
+    position: relative;
+}
+body {
+    overflow: hidden;
+    font-family: monospace;
+    padding: 0; margin: 0;
     background: #fff;
-    position: fixed;
-    border-radius: 4px;
-    top: 50%; left: 50%;
-    margin-top: -289px;
-    margin-left: -161px; /* -289 + 128 */
-}
-body { font-family: monospace;  background: hsl(25, 30%, 70%); }
-.screen {
-    border-radius: 4px;
-    background: hsl(25, 30%, 20%);
-    position: absolute;
-    width: 380px; /* 384 - 4*/
-    height: 236px; /* 240 - 4 */
-    background: hsl(25, 30%, 20%);
-    z-index: 3;
-}
-.screen .youtube {
-    width: 364px; /* 380 - 16 */
-    height: 205px;
-    border: 0;
-    top: 8px; left: 8px;
-    position: absolute;
-}
-.screen .cover {
-    width: 380px;
-    height: 213px; /* 205 + 8 */
-    background: transparent;
-    position: absolute;
-    top: 0; left: 0;
-    z-index: 4; }
-
-.screen .label {
-    position: absolute;
-    bottom: 0; left: 0;
-    border-bottom-left-radius: 4px;
-    border-bottom-right-radius: 4px;
-
-    width: 380px;
-    height: 23px;
-    line-height: 23px;
-
-    text-align: center;
-    color: #fff; font-size: 12px;
-    background: hsl(25, 30%, 20%); }
-    
-.screen .button {
-    display: block;
-    position: absolute;
-    bottom: 0;
-    z-index: 5;
-
-    width: 23px;
-    height: 23px;
-
-    cursor: pointer;
-    background: transparent;
-    border: 0;
-    color: #fff;
-    padding: 0; }
-.screen .button::after {
-    width: 23px; line-height: 23px;
-    display: inline-block;
-    text-align: center; }
-
-.screen .button-youtube {
-    font-size: 10px;
-    background: hsl(0,60%,40%);
-    bottom: 0;
-    left: 28px; }
-.screen .button-youtube::after {
-    content: "YT"; }
-.screen .button-close {
-    border-bottom-left-radius: 4px;
-    background: hsl(25, 30%, 20%);
-    font-size: 10px;
-    width: 28px;
-    left: 0; bottom: 0; }
-.screen .button-close::after {
-    content: "CLR"; }
-
-.screen .button-delete {
-    border-bottom-right-radius: 4px;
-    bottom: 0; right: 0; }
-.screen .button-delete::after { content: "×"; }
-
-.face {
-    border-radius: 4px;
-    position: absolute;
-    width: 20px; height: 20px;
-    z-index: 7;
-}
-.face::after, .face::before {
-    position: absolute;
-    display: inline-block;
-    width: 4px;
-    height: 4px;
-    right: 4px;
-    top: 4px;
-    background: #111;
-    content: " ";
-}
-.face::before {
-    left: 4px;
-}
-.face .smile {
-    background: #111;
-    position: absolute;
-    display: inline-block;
-    width: 10px;
-    height: 3px;
-    left: 5px;
-    top: 12px;
-}
-.face.me {
-    z-index: 8;
-}
+    height: 100vh; }
 
 #dead {
     display: none;
@@ -176,17 +76,16 @@ body { font-family: monospace;  background: hsl(25, 30%, 70%); }
 }
 </style>
 
-<div id="sidebar">
+<div id="people" class="blob">
     <h2>People</h2>
-    <div id="people">
-    </div>
-    <div class="spacer"></div>
-    <div id="objects">
+</div>
+<div id="objects" class="blob">
     <h2>Create</h2>
-    <div class="object-type" id="object-screen">Screen</div>
+        <div class="object-type" id="object-screen">Screen</div>
     </div>
     <div id="dead">Killed</div>
 </div>
+
 <div id="map"></div>
 
 <script>
@@ -199,100 +98,6 @@ function youtubeURLtoID(url) {
     }
     return "";
 }
-
-var API = {
-    create: function(key) {
-        return new Promise(function(resolve, reject){
-            var xhr = new XMLHttpRequest();
-            xhr.onload = function() {
-                resolve(JSON.parse(xhr.responseText));
-            };
-            xhr.open("POST", "/create?key=" + key);
-            xhr.send();
-        });
-    },
-    move: function(key, x, y) {
-        return new Promise(function(resolve, reject){
-            var xhr = new XMLHttpRequest();
-            xhr.onload = function() {
-                resolve(JSON.parse(xhr.responseText));
-            };
-            xhr.open("POST", "/move?key=" + key + "&x=" + x + "&y=" + y);
-            xhr.send();
-        });
-    },
-    objects: function(key) {
-        return new Promise(function(resolve, reject){
-            var xhr = new XMLHttpRequest();
-            xhr.onload = function() {
-                resolve(JSON.parse(xhr.responseText));
-            };
-            xhr.open("GET", "/objects?key=" + key);
-            xhr.send();
-        });
-    },
-    screen_create: function(key) {
-        return new Promise(function(resolve, reject){
-            var xhr = new XMLHttpRequest();
-            xhr.onload = function() {
-                resolve(JSON.parse(xhr.responseText));
-            };
-            xhr.open("POST", "/screen/create?key=" + key);
-            xhr.send();
-        });
-    },
-    screen_close: function(key, screen) {
-        return new Promise(function(resolve, reject){
-            var xhr = new XMLHttpRequest();
-            xhr.onload = function() {
-                resolve(JSON.parse(xhr.responseText));
-            };
-            xhr.open("POST", "/screen/close?key=" + key + "&screen=" + screen);
-            xhr.send();
-        });
-    },
-    screen_delete: function(key, screen) {
-        return new Promise(function(resolve, reject){
-            var xhr = new XMLHttpRequest();
-            xhr.onload = function() {
-                resolve(JSON.parse(xhr.responseText));
-            };
-            xhr.open("POST", "/screen/delete?key=" + key + "&screen=" + screen);
-            xhr.send();
-        });
-    },
-    screen_youtube: function(key, screen, video) {
-        return new Promise(function(resolve, reject){
-            var xhr = new XMLHttpRequest();
-            xhr.onload = function() {
-                resolve(JSON.parse(xhr.responseText));
-            };
-            xhr.open("POST", "/screen/youtube?key=" + key + "&screen=" + screen + "&video=" + video);
-            xhr.send();
-        });
-    },
-    face_rename: function(key, name) {
-        return new Promise(function(resolve, reject){
-            var xhr = new XMLHttpRequest();
-            xhr.onload = function() {
-                resolve(JSON.parse(xhr.responseText));
-            };
-            xhr.open("POST", "/face/rename?key=" + key + "&name=" + name);
-            xhr.send();
-        });
-    },
-    face_kill: function(key) {
-        return new Promise(function(resolve, reject){
-            var xhr = new XMLHttpRequest();
-            xhr.onload = function() {
-                resolve(JSON.parse(xhr.responseText));
-            };
-            xhr.open("POST", "/face/kill?key=" + key);
-            xhr.send();
-        });
-    }
-
-};
 
 let me = null;
 
@@ -343,112 +148,6 @@ function domUpdatePerson(id, data) {
         nameElem.innerHTML = "Anonymous";
 }
 
-function domUpdateFace(id, data, me) {
-    let elem = document.getElementById("object-" + id);
-    if (elem == null) {
-        elem = document.createElement("div");
-        elem.classList.add("face");
-        elem.classList.add("object");
-        if (me) {
-            elem.classList.add("me");
-        }
-        elem.id = "object-" + id;
-
-        let smile = document.createElement("div");
-        smile.classList.add("smile");
-        elem.appendChild(smile);
-
-        mapElem.appendChild(elem);
-    }
-    elem.style.display = "block";
-    elem.style.top = data.position[1] * 24 + 2 + "px";
-    elem.style.left = data.position[0] * 24 + 2 + "px";
-    elem.style.backgroundColor = faceColors[data.color];
-}
-
-function domUpdateScreen(id, data) {
-    let elem = document.getElementById("object-" + id);
-    if (elem == null) {
-        elem = document.createElement("div");
-        elem.classList.add("object");
-        elem.classList.add("screen");
-        elem.id = "object-" + id;
-
-        let coverElem = document.createElement("div");
-        coverElem.classList.add("cover");
-        elem.appendChild(coverElem);
-
-        let labelElem = document.createElement("div");
-        labelElem.className = "label";
-        elem.appendChild(labelElem);
-
-        if (data.owner == me.id) {
-            let screenId = id;
-
-            let closeElem = document.createElement("button");
-            closeElem.classList.add("button");
-            closeElem.classList.add("button-close");
-            closeElem.onclick = function() {
-                API.screen_close(me.key, screenId);    
-            }
-            
-            let deleteElem = document.createElement("button");
-            deleteElem.classList.add("button");
-            deleteElem.classList.add("button-delete");
-            deleteElem.onclick = function() {
-                API.screen_delete(me.key, screenId);    
-            }
-
-            let youtubeElem = document.createElement("button");
-            youtubeElem.classList.add("button");
-            youtubeElem.classList.add("button-youtube");
-            youtubeElem.onclick = function() {
-                let videoUrl = window.prompt("Video URL");
-                let videoId = youtubeURLtoID(videoUrl);
-                if (videoId) {
-                    API.screen_youtube(me.key, screenId, videoId);
-                }
-            };
-
-            elem.appendChild(youtubeElem);
-            elem.appendChild(deleteElem);
-            elem.appendChild(closeElem);
-        }
-
-        mapElem.appendChild(elem);
-    }
-    elem.style.display = "block";
-    elem.style.top = data.position[1] * 24 + 2 + "px";
-    elem.style.left = data.position[0] * 24 + 2 + "px";
-
-    const labelElem = elem.getElementsByClassName("label")[0];
-    let ytElem = elem.getElementsByClassName("youtube")[0];
-    if (data.content && data.content.youtube) {
-        labelElem.innerHTML = "YouTube";
-        elem.style.background = labelElem.style.background = "hsl(0, 60%, 40%)";
-
-        if (!ytElem) {
-            ytElem = document.createElement("iframe");
-            ytElem.classList.add("youtube");
-            ytElem.style.display = "block";
-            elem.appendChild(ytElem);
-        }
-
-        let secondsPassed = (Date.now() - new Date(data.content.time_start).getTime()) / 1000;
-        ytElem.style.display = "block";
-        if (ytElem.src.indexOf(data.content.video) == -1) {
-            ytElem.src = "https://www.youtube.com/embed/" + data.content.video + "?rel=0&autoplay=1&disablekb=1&controls=0&start=" + Math.round(secondsPassed);
-        }
-    } else {
-        elem.style.background = labelElem.style.background = "hsl(25, 30%, 20%)";
-        labelElem.innerHTML = "Screen";
-        if (ytElem) {
-            ytElem.style.display = "none";
-            ytElem.src = "about:blank";
-        }
-    }
-}
-
 function domObjects() {
     let objects = document.getElementsByClassName("object");
     let ids = [];
@@ -487,16 +186,17 @@ function update() {
 
         for (let id in data) {
             let object = data[id];
-            if (object.type == "face") {
-                domUpdateFace(id, object, id == me.id);
-                domUpdatePerson(id, object);
-            } else if (object.type == "screen") {
-                domUpdateScreen(id, object);
-            }
-
             if (id == me.id) {
                 if (!me.position)
                     me.position = object.position;
+            }
+            if (object.type == "face") {
+                let face = new objects.Face(id);
+                face.update(object);
+                domUpdatePerson(id, object);
+            } else if (object.type == "screen") {
+                let screen = new objects.Screen(id);
+                screen.update(object);
             }
         }
 
@@ -531,8 +231,6 @@ document.onkeydown = function(e) {
             me.position[1] += 1;
             break;
     }
-    if (me.position[0] >= 24) me.position[0] = 23;
-    if (me.position[1] >= 24) me.position[1] = 23;
     if (e.key.startsWith("Arrow")) {
         API.move(me.key, me.position[0], me.position[1]).then(update);
     }

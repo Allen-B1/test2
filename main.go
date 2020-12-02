@@ -52,9 +52,6 @@ type State struct {
 	Lock sync.RWMutex
 }
 
-const MAP_WIDTH = 24
-const MAP_HEIGHT = 24
-
 func NewState() *State {
 	s := &State{}
 	s.Faces = make(map[ID]*Face)
@@ -72,6 +69,7 @@ func main() {
 	r.GET("/", func(c *gin.Context) {
 		c.File("main.html")
 	})
+	r.Static("/static", "./static")
 	r.GET("/objects", func(c *gin.Context) {
 		state.Lock.RLock()
 		defer state.Lock.RUnlock()
@@ -293,8 +291,8 @@ func main() {
 		defer state.Lock.Unlock()
 
 		key := c.Query("key")
-		x, _ := strconv.ParseUint(c.Query("x"), 10, 64)
-		y, _ := strconv.ParseUint(c.Query("y"), 10, 64)
+		x, _ := strconv.ParseInt(c.Query("x"), 10, 32)
+		y, _ := strconv.ParseInt(c.Query("y"), 10, 32)
 
 		id := state.Keys[key]
 
@@ -303,10 +301,6 @@ func main() {
 			return
 		}
 
-		if x >= MAP_WIDTH || y >= MAP_HEIGHT  {
-			c.JSON(400, map[string]string{"error": "out of bounds"})
-			return
-		}
 		state.Faces[id].Position = Coord{int32(x),int32(y)}
 
 		c.JSON(200, nil)
