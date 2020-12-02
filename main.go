@@ -45,6 +45,13 @@ type YouTube struct {
 	TimeStart time.Time `json:"time_start"`// Time in which the YouTube video was at 0:00
 }
 
+type Twitch struct {
+	Twitch struct{} `json:"twitch"`
+	ChannelID string `json:"channel"`
+	VideoID string `json:"video"`
+	TimeStart time.Time `json:"time_start"`// Time in which the video was at 0:00, if it is a video
+}
+
 type State struct {
 	Faces map[ID]*Face
 	Screens map[ID]*Screen
@@ -280,6 +287,36 @@ func main() {
 		videoID := c.Query("video")
 		screen.Content = YouTube{
 			VideoID: videoID,
+			TimeStart: time.Now(),
+		}
+
+		c.JSON(200, nil)
+	})
+
+	r.POST("/screen/twitch", func (c *gin.Context) {
+		state.Lock.Lock()
+		defer state.Lock.Unlock()
+
+		id := state.Keys[c.Query("key")]
+		if _, ok := state.Faces[id]; !ok {
+			c.JSON(400, map[string]string{"error": "invalid id"})
+			return
+		}
+
+		screenID := ID(c.Query("screen"))
+		screen, ok := state.Screens[screenID]
+		if !ok {
+			c.JSON(400, map[string]string{"error": "invalid screen id"})
+			return
+		}
+		if id != screen.Owner {
+			c.JSON(400, map[string]string{"error": "not owner of screen"})
+			return
+		}
+		
+		screen.Content = Twitch{
+			ChannelID: c.Query("channel"),
+			VideoID: c.Query("video"),
 			TimeStart: time.Now(),
 		}
 

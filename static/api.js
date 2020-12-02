@@ -69,6 +69,16 @@ var API = {
             xhr.send();
         });
     },
+    screen_twitch: function(key, screen, channel, video) {
+        return new Promise(function(resolve, reject){
+            var xhr = new XMLHttpRequest();
+            xhr.onload = function() {
+                resolve(JSON.parse(xhr.responseText));
+            }
+            xhr.open("POST", "/screen/twitch?key=" + key + "&screen=" + screen + (channel ? "&channel=" + channel : "&video=" + video));
+            xhr.send();
+        });
+    },
     face_rename: function(key, name) {
         return new Promise(function(resolve, reject){
             var xhr = new XMLHttpRequest();

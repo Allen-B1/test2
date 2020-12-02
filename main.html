@@ -73,32 +73,25 @@ body {
     text-align: center;
     font-weight: bold;
     color: #fff;
+    border-top-right-radius: 4px;
+    border-top-left-radius: 4px;
 }
+
 </style>
 
 <div id="people" class="blob">
+    <div id="dead">Killed</div>
     <h2>People</h2>
 </div>
 <div id="objects" class="blob">
     <h2>Create</h2>
         <div class="object-type" id="object-screen">Screen</div>
     </div>
-    <div id="dead">Killed</div>
 </div>
 
 <div id="map"></div>
 
 <script>
-function youtubeURLtoID(url) {
-    url = new URL(url);
-    if (url.host == "youtu.be"){ 
-        return url.pathname.slice(1);
-    } else if (url.host == "youtube.com" || url.host == "www.youtube.com") {
-        return url.searchParams.get("v");
-    }
-    return "";
-}
-
 let me = null;
 
 API.create(location.hash.slice(1)).then(function(data) {
@@ -229,6 +222,9 @@ document.onkeydown = function(e) {
             break;
         case "ArrowDown":
             me.position[1] += 1;
+            break;
+        case "K":
+            API.face_kill(me.key);
             break;
     }
     if (e.key.startsWith("Arrow")) {
