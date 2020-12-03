@@ -30,7 +30,7 @@ objects.Face = (function() {
             this.elem.style.marginTop = (data.position[1] - position[1]) * 24 + "px";
             this.elem.style.marginLeft = (data.position[0] - position[0]) * 24 + "px";
         }
-        this.elem.style.backgroundColor = faceColors[data.color];
+        this.elem.setAttribute("data-color", data.color);
     }
 
     return Face;

@@ -1,14 +1,18 @@
 .screen {
     border-radius: 4px;
-    background: hsl(25, 30%, 20%);
+    background: hsl(200, 25%, 60%);
     position: absolute;
     left: calc(50% - 12px);
     top: calc(50% - 12px);
     width: 380px; /* 384 - 4*/
     height: 236px; /* 240 - 4 */
-    background: hsl(25, 30%, 20%);
+    background: hsl(200, 25%, 60%);
     z-index: 3;
 }
+.screen.youtube, .screen.youtube .label {
+    background: hsl(0, 60%,40%); }
+.screen.twitch, .screen.twitch .label {
+    background: hsl(250, 65%, 40%); }
 .screen iframe {
     width: 364px; /* 380 - 16 */
     height: 205px;
@@ -38,7 +42,7 @@
 
     text-align: center;
     color: #fff; font-size: 12px;
-    background: hsl(25, 30%, 20%); }
+    background: hsl(200, 25%, 60%); }
     
 .screen .button {
     display: block;
@@ -69,7 +73,7 @@
     content: "VID"; }
 .screen .button-close {
     border-bottom-left-radius: 4px;
-    background: hsl(25, 30%, 20%);
+    background: hsl(200, 25%, 60%);
     font-size: 10px;
     width: 28px;
     left: 0; bottom: 0; }
@@ -88,6 +92,7 @@
 .screen .button-fullscreen::after { content: "⛶"; }
 
 .screen.fullscreen {
+    border-radius: 0;
     position: fixed;
     z-index: 50;
     margin: 0 !important;

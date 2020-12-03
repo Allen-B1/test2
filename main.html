@@ -7,14 +7,14 @@
 <style>
 .blob {
     position: fixed;
-    background: rgba(0,0,0,0.35);
+    background:hsla(240,10%,45%,0.5);
+    color:hsla(240,15%,5%,0.5);
     border-radius: 4px;
     z-index: 10;
 }
 .blob h2 {
-    color: #fff;
     text-align: center;
-    font-size: 16px;
+    font-size: 14px;
     font-weight: bold;
     margin: 8px 0;
 }
@@ -31,18 +31,16 @@
     padding: 8px 16px; }
 #people .person.me {
     cursor: pointer; }
-#people .person.me:hover, #objects .object-type:hover {
-    background: rgba(0,0,0,0.45);
+#people .person.me:active, #objects .object-type:active {
+    background: hsla(240,12%,35%,0.5);
 }
 #people .person .face {
-    background: #aaa;
     display: inline-block;
     position: relative;
     top:0; left:0; }
 #people .person .name {
     margin-left: 8px;
-    font-size: 12px;
-    color: #fff; }
+    font-size: 12px; }
 
 #objects {
     left: 32px;
@@ -50,7 +48,6 @@
 }
 #objects .object-type {
     cursor: pointer;
-    color: #fff;
     font-size: 12px;
     padding: 8px 16px; }
 
@@ -114,7 +111,7 @@ function domUpdatePerson(id, data) {
 
         let face = document.createElement("div");
         face.classList.add("face");
-        face.style.backgroundColor = faceColors[data.color];
+        face.setAttribute("data-color", data.color);
         let smile = document.createElement("div");
         smile.className = "smile";
         face.appendChild(smile);

@@ -13,14 +13,14 @@
     height: 4px;
     right: 4px;
     top: 4px;
-    background: #111;
+    background: var(--eye-color);
     content: " ";
 }
 .face::before {
     left: 4px;
 }
 .face .smile {
-    background: #111;
+    background: var(--eye-color);
     position: absolute;
     display: inline-block;
     width: 10px;
@@ -29,5 +29,15 @@
     top: 12px;
 }
 .face.me {
-    z-index: 8;
-}
+    z-index: 8; }
+
+.face[data-color="0"] {
+    background: hsl(0,100%,60%);
+    --eye-color: hsl(0,100%,20%); }
+.face[data-color="1"] {
+    background:hsl(200,85%,50%);--eye-color:hsl(200,100%,20%); }
+.face[data-color="2"] {background:hsl(35,100%,50%);--eye-color:hsl(35,80%,20%);}
+.face[data-color="3"] { background:hsl(100,85%,50%);--eye-color:hsl(100,100%,20%);}
+.face[data-color="4"] {background:hsl(300,85%,50%);--eye-color:hsl(300,100%,20%); }
+.face[data-color="5"] { background:hsl(60,100%,45%);--eye-color:hsl(60,100%,20%); }
+.face[data-color="6"] { background:hsl(250,100%,65%);--eye-color:hsl(250,80%,30%);}

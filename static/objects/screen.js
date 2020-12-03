@@ -127,7 +127,8 @@ objects.Screen = (function() {
         const labelElem = this.elem.getElementsByClassName("label")[0];
         let iframeElem = this.elem.getElementsByTagName("iframe")[0];
         if (data.content && data.content.youtube) {
-            this.elem.style.background = labelElem.style.background = "hsl(0, 60%, 40%)";
+            this.elem.classList.remove("twitch");
+            this.elem.classList.add("youtube");
 
             if (!iframeElem) {
                 iframeElem = document.createElement("iframe");
@@ -145,7 +146,8 @@ objects.Screen = (function() {
                 });
             }
         } else if (data.content && data.content.twitch) {
-            this.elem.style.background = labelElem.style.background = "hsl(280, 60%, 40%)";
+            this.elem.classList.remove("youtube");
+            this.elem.classList.add("twitch");
 
             if (!iframeElem) {
                 iframeElem = document.createElement("iframe");
@@ -164,7 +166,7 @@ objects.Screen = (function() {
                 }
             }
         } else {
-            this.elem.style.background = labelElem.style.background = "hsl(25, 30%, 20%)";
+            this.elem.classList.remove("youtube", "twitch");
             labelElem.innerHTML = "Screen";
             if (iframeElem && iframeElem.src !== "about:blank") {
                 iframeElem.style.display = "none";
