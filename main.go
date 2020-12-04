@@ -36,20 +36,23 @@ const NUM_COLORS = 6
 type Screen struct {
 	Position Coord
 	Owner ID
-	Content interface{}
+	Content interface{
+		Encode() interface{}
+	}
 }
 
-type YouTube struct {
-	YouTube struct{} `json:"youtube"`
-	VideoID string	`json:"video"`	// Video ID
-	TimeStart time.Time `json:"time_start"`// Time in which the YouTube video was at 0:00
+type Video struct {
+	Type string // "youtube", "twitch_channel", or "twitch_video"
+	VideoID string
+	TimeStart time.Time
 }
 
-type Twitch struct {
-	Twitch struct{} `json:"twitch"`
-	ChannelID string `json:"channel"`
-	VideoID string `json:"video"`
-	TimeStart time.Time `json:"time_start"`// Time in which the video was at 0:00, if it is a video
+func (v *Video) Encode() interface{} {
+	return map[string]interface{}{
+		"type": v.Type,
+		"video_id": v.VideoID,
+		"time_start": v.TimeStart,
+	}
 }
 
 type State struct {
@@ -102,7 +105,7 @@ func main() {
 			data[id] = map[string]interface{}{
 				"type": "screen",
 				"position": screen.Position,
-				"content": screen.Content,
+				"content": screen.Content.Encode(),
 				"owner": screen.Owner,
 			}
 		}
@@ -263,7 +266,7 @@ func main() {
 		c.JSON(200, nil)
 	})
 
-	r.POST("/screen/youtube", func (c *gin.Context) {
+	r.POST("/screen/video", func (c *gin.Context) {
 		state.Lock.Lock()
 		defer state.Lock.Unlock()
 
@@ -284,40 +287,15 @@ func main() {
 			return
 		}
 		
-		videoID := c.Query("video")
-		screen.Content = YouTube{
-			VideoID: videoID,
-			TimeStart: time.Now(),
+		timeOffset, err := time.ParseDuration(c.Query("time_offset"))
+		if err != nil {
+			timeOffset = 0
 		}
-
-		c.JSON(200, nil)
-	})
-
-	r.POST("/screen/twitch", func (c *gin.Context) {
-		state.Lock.Lock()
-		defer state.Lock.Unlock()
-
-		id := state.Keys[c.Query("key")]
-		if _, ok := state.Faces[id]; !ok {
-			c.JSON(400, map[string]string{"error": "invalid id"})
-			return
-		}
-
-		screenID := ID(c.Query("screen"))
-		screen, ok := state.Screens[screenID]
-		if !ok {
-			c.JSON(400, map[string]string{"error": "invalid screen id"})
-			return
-		}
-		if id != screen.Owner {
-			c.JSON(400, map[string]string{"error": "not owner of screen"})
-			return
-		}
-		
-		screen.Content = Twitch{
-			ChannelID: c.Query("channel"),
-			VideoID: c.Query("video"),
-			TimeStart: time.Now(),
+		contentID := c.Query("content_id")
+		screen.Content = Video{
+			Type: c.Query("type"),
+			ContentID: contentID,
+			TimeStart: time.Now().Add(-timeOffset),
 		}
 
 		c.JSON(200, nil)

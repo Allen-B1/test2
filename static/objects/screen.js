@@ -1,28 +1,17 @@
 objects = globalThis.objects || {};
 objects.Screen = (function() {
-    function youtubeURLtoID(url) {
+    function parseVideoURL(url) {
         try {
             url = new URL(url);
             if (url.host == "youtu.be"){ 
-                return url.pathname.slice(1);
+                return ["youtube", url.pathname.slice(1)];
             } else if (url.host == "youtube.com" || url.host == "www.youtube.com") {
-                return url.searchParams.get("v");
-            }
-            return null;
-        } catch(err) {
-            return null;
-        }
-    }
-
-    // [channel, video]
-    function twichURLtoID(url) {
-        try {
-            url = new URL(url);
-            if ((url.host == "twitch.tv" || url.host == "www.twitch.tv") && url.pathname.length > 1) {
+                return ["youtube", url.searchParams.get("v")];
+            } else if ((url.host == "twitch.tv" || url.host == "www.twitch.tv") && url.pathname.length > 1) {
                 if (url.pathname.startsWith("/videos")) {
-                    return ["", url.pathname.slice("/videos/".length)];
+                    return ["twitch_video", url.pathname.slice("/videos/".length)];
                 }
-                return [url.pathname.slice(1), ""];
+                return ["twitch_channel", url.pathname.slice(1)];
             }
             return null;
         } catch(err) {
@@ -102,17 +91,13 @@ objects.Screen = (function() {
                 API.screen_delete(me.key, screenId);    
             }
 
-            let youtubeElem = document.createElement("button");
-            youtubeElem.classList.add("button");
-            youtubeElem.classList.add("button-video");
-            youtubeElem.onmouseup = function() {
+            let videoElem = document.createElement("button");
+            videoElem.classList.add("button");
+            videoElem.classList.add("button-video");
+            videoElem.onmouseup = function() {
                 let videoUrl = window.prompt("Video URL");
-                let videoId = youtubeURLtoID(videoUrl);
-                if (videoId) {
-                    API.screen_youtube(me.key, screenId, videoId);
-                } else if (videoId = twichURLtoID(videoUrl)) {
-                    API.screen_twitch(me.key, screenId, videoId[0], videoId[1]);
-                }
+                let [videoType, contentID] = parseVideoURL(videoUrl);
+                API.screen_video(me.key, screenID, videoType, contentID);
             };
 
             this.elem.appendChild(youtubeElem);
@@ -126,7 +111,7 @@ objects.Screen = (function() {
 
         const labelElem = this.elem.getElementsByClassName("label")[0];
         let iframeElem = this.elem.getElementsByTagName("iframe")[0];
-        if (data.content && data.content.youtube) {
+        if (data.content && data.content.type == "youtube") {
             this.elem.classList.remove("twitch");
             this.elem.classList.add("youtube");
 
@@ -138,14 +123,14 @@ objects.Screen = (function() {
 
             let secondsPassed = (Date.now() - new Date(data.content.time_start).getTime()) / 1000;
             iframeElem.style.display = "block";
-            if (iframeElem.src.indexOf(data.content.video) == -1) {
-                iframeElem.src = "https://www.youtube.com/embed/" + data.content.video + "?rel=0&autoplay=1&disablekb=1&controls=0&start=" + Math.round(secondsPassed);
+            if (iframeElem.src.indexOf(data.content.video_id) == -1) {
+                iframeElem.src = "https://www.youtube.com/embed/" + data.content.video_id + "?rel=0&autoplay=1&disablekb=1&controls=0&start=" + Math.round(secondsPassed);
                 labelElem.innerHTML = "YouTube";
-                getYouTubeTitle(data.content.video).then(function(title) {
+                getYouTubeTitle(data.content.video_id).then(function(title) {
                     labelElem.innerText = title;
                 });
             }
-        } else if (data.content && data.content.twitch) {
+        } else if (data.content && (data.content.type == "twitch_channel" || data.content.type == "twitch_video")) {
             this.elem.classList.remove("youtube");
             this.elem.classList.add("twitch");
 
@@ -155,14 +140,14 @@ objects.Screen = (function() {
                 this.elem.appendChild(iframeElem);
             }
             iframeElem.style.display = "block";
-            if ((!data.content.channel || iframeElem.src.indexOf(data.content.channel) === -1) &&  (!data.content.video || iframeElem.src.indexOf(data.content.video) === -1)) {
-                if (data.content.channel) {
-                    iframeElem.src = "https://player.twitch.tv/?autoplay=true&parent=" + location.host + "&channel=" + data.content.channel;
-                    labelElem.innerText = data.content.channel;
+            if (iframeElem.src.indexOf(data.content.video_id) === -1) {
+                if (data.content.type == "twitch_channel") {
+                    iframeElem.src = "https://player.twitch.tv/?autoplay=true&parent=" + location.host + "&channel=" + data.content.video_id;
+                    labelElem.innerText = data.content.video_id;
                 } else {
                     let secondsPassed = Math.round((Date.now() - new Date(data.content.time_start).getTime()) / 1000);
-                    labelElem.innerText = "Twitch";
-                    iframeElem.src = "https://player.twitch.tv/?autoplay=true&parent=" + location.host + "&video=v" + data.content.video + "&time=" + secondsPassed + "s";
+                    labelElem.innerText = "";
+                    iframeElem.src = "https://player.twitch.tv/?autoplay=true&parent=" + location.host + "&video=v" + data.content.video_id + "&time=" + secondsPassed + "s";
                 }
             }
         } else {

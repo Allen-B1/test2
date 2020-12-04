@@ -59,23 +59,13 @@ var API = {
             xhr.send();
         });
     },
-    screen_youtube: function(key, screen, video) {
+    screen_video: function(key, screen, type, contentID, timeOffset) {
         return new Promise(function(resolve, reject){
             var xhr = new XMLHttpRequest();
             xhr.onload = function() {
                 resolve(JSON.parse(xhr.responseText));
             };
-            xhr.open("POST", "/screen/youtube?key=" + key + "&screen=" + screen + "&video=" + video);
-            xhr.send();
-        });
-    },
-    screen_twitch: function(key, screen, channel, video) {
-        return new Promise(function(resolve, reject){
-            var xhr = new XMLHttpRequest();
-            xhr.onload = function() {
-                resolve(JSON.parse(xhr.responseText));
-            }
-            xhr.open("POST", "/screen/twitch?key=" + key + "&screen=" + screen + (channel ? "&channel=" + channel : "&video=" + video));
+            xhr.open("POST", "/screen/video?key=" + key + "&screen=" + screen + "&type=" + type + "&content_id=" + contentID + "&time_offset=" + timeOffset);
             xhr.send();
         });
     },
