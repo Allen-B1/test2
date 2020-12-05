@@ -100,7 +100,7 @@ objects.Screen = (function() {
                 API.screen_video(me.key, screenID, videoType, contentID);
             };
 
-            this.elem.appendChild(youtubeElem);
+            this.elem.appendChild(videoElem);
             this.elem.appendChild(deleteElem);
             this.elem.appendChild(closeElem);
         }
@@ -124,7 +124,7 @@ objects.Screen = (function() {
             let secondsPassed = (Date.now() - new Date(data.content.time_start).getTime()) / 1000;
             iframeElem.style.display = "block";
             if (iframeElem.src.indexOf(data.content.video_id) == -1) {
-                iframeElem.src = "https://www.youtube.com/embed/" + data.content.video_id + "?rel=0&autoplay=1&disablekb=1&controls=0&start=" + Math.round(secondsPassed);
+                iframeElem.src = location.protocol + "//www.youtube.com/embed/" + data.content.video_id + "?rel=0&autoplay=1&disablekb=1&controls=0&start=" + Math.round(secondsPassed);
                 labelElem.innerHTML = "YouTube";
                 getYouTubeTitle(data.content.video_id).then(function(title) {
                     labelElem.innerText = title;
@@ -142,12 +142,12 @@ objects.Screen = (function() {
             iframeElem.style.display = "block";
             if (iframeElem.src.indexOf(data.content.video_id) === -1) {
                 if (data.content.type == "twitch_channel") {
-                    iframeElem.src = "https://player.twitch.tv/?autoplay=true&parent=" + location.host + "&channel=" + data.content.video_id;
+                    iframeElem.src = location.protocol + "//player.twitch.tv/?autoplay=true&parent=" + location.host + "&channel=" + data.content.video_id;
                     labelElem.innerText = data.content.video_id;
                 } else {
                     let secondsPassed = Math.round((Date.now() - new Date(data.content.time_start).getTime()) / 1000);
                     labelElem.innerText = "";
-                    iframeElem.src = "https://player.twitch.tv/?autoplay=true&parent=" + location.host + "&video=v" + data.content.video_id + "&time=" + secondsPassed + "s";
+                    iframeElem.src = location.protocol + "//player.twitch.tv/?autoplay=true&parent=" + location.host + "&video=v" + data.content.video_id + "&time=" + secondsPassed + "s";
                 }
             }
         } else {

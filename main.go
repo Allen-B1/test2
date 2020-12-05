@@ -102,10 +102,14 @@ func main() {
 		}
 
 		for id, screen := range state.Screens {
+			var encodedContent interface{} = nil
+			if screen.Content != nil{ 
+				encodedContent = screen.Content.Encode()
+			}
 			data[id] = map[string]interface{}{
 				"type": "screen",
 				"position": screen.Position,
-				"content": screen.Content.Encode(),
+				"content": encodedContent,
 				"owner": screen.Owner,
 			}
 		}
@@ -291,10 +295,10 @@ func main() {
 		if err != nil {
 			timeOffset = 0
 		}
-		contentID := c.Query("content_id")
-		screen.Content = Video{
+		videoID := c.Query("content_id")
+		screen.Content = &Video{
 			Type: c.Query("type"),
-			ContentID: contentID,
+			VideoID: videoID,
 			TimeStart: time.Now().Add(-timeOffset),
 		}
 
