@@ -97,7 +97,7 @@ objects.Screen = (function() {
             videoElem.onmouseup = function() {
                 let videoUrl = window.prompt("Video URL");
                 let [videoType, contentID] = parseVideoURL(videoUrl);
-                API.screen_video(me.key, screenID, videoType, contentID);
+                API.screen_video(me.key, screenId, videoType, contentID);
             };
 
             this.elem.appendChild(videoElem);
